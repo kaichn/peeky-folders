@@ -4,7 +4,7 @@
 Based on Carl's sketch: a frosted Liquid Glass folder, with two more fanned out behind it, centred on an azure
 gradient, a small heart in its top-left corner, and a few soft curved lines along
 the inner left and right edges that hint at the inside of the folder. One hue
-family throughout: tinted white glass, deep tonal-blue heart, faint blue lines.
+family throughout: tinted white glass, a grey glass heart, faint blue lines.
 
 Follows Apple's app icon guidance: few filled shapes with clear edges, a simple
 gradient background that makes the white glyph stand out, no hand-drawn shadows
@@ -18,8 +18,9 @@ Usage: scripts/make-icon-layers.py Resources/AppIcon.icon
 import json, os, sys
 
 out = sys.argv[1] if len(sys.argv) > 1 else "Resources/AppIcon.icon"
-variant = sys.argv[2] if len(sys.argv) > 2 else "blue"
-HEART = {"blue": ("#2F86FF", "#0A55D0"),      # deep tonal azure (default)
+variant = sys.argv[2] if len(sys.argv) > 2 else "grey"
+HEART = {"grey": ("#B4BCC7", "#7E8896"),     # neutral glass grey (default)
+         "blue": ("#2F86FF", "#0A55D0"),
          "white": ("#FFFFFF", "#DCEBFF"),
          "red": ("#FF5A4E", "#E8302A")}[variant]
 os.makedirs(os.path.join(out, "Assets"), exist_ok=True)
@@ -62,21 +63,16 @@ def fanned(angle):
     return f'<g transform="rotate({angle} {PIVOT[0]} {PIVOT[1]})">{folder()}</g>'
 
 def heart(cx, cy, s):
-    """A rounded heart, s wide and nearly as tall, centred on (cx, cy)."""
-    k = s / 200.0
-    def p(x, y):
-        return f"{cx + x * k:.1f} {cy + y * k:.1f}"
-    # 200 wide by 194 tall (about 1.03:1), close to Apple's own heart proportions.
-    d = (f"M{p(0, 97)} "
-         f"C{p(-12, 89)} {p(-100, 37)} {p(-100, -33)} "
-         f"C{p(-100, -71)} {p(-72, -97)} {p(-44, -97)} "
-         f"C{p(-22, -97)} {p(-6, -85)} {p(0, -65)} "
-         f"C{p(6, -85)} {p(22, -97)} {p(44, -97)} "
-         f"C{p(72, -97)} {p(100, -71)} {p(100, -33)} "
-         f"C{p(100, 37)} {p(12, 89)} {p(0, 97)} Z")
+    """A Health-style heart: full round lobes, a clean notch, straight-ish sides and
+    a softly rounded point. Drawn 208 wide by 188 tall, scaled so s is the width."""
+    path = ("M0 -52 C-10 -78 -30 -92 -54 -92 C-84 -92 -104 -68 -104 -38 "
+            "C-104 6 -64 46 -8 90 Q0 96 8 90 C64 46 104 6 104 -38 "
+            "C104 -68 84 -92 54 -92 C30 -92 10 -78 0 -52 Z")
+    k = s / 208
     return ('<defs><linearGradient id="h" x1="0" y1="0" x2="0" y2="1">'
             f'<stop offset="0" stop-color="{HEART[0]}"/><stop offset="1" stop-color="{HEART[1]}"/>'
-            f'</linearGradient></defs><path d="{d}" fill="url(#h)"/>')
+            f'</linearGradient></defs>'
+            f'<path d="{path}" fill="url(#h)" transform="translate({cx} {cy}) scale({k:.4f})"/>')
 
 def inner_lines():
     """Soft curved strokes along the inner right edge (the heart owns the left)."""
