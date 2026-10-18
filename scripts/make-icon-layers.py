@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Generates Resources/AppIcon.icon (Icon Composer format) for Peeky Folders.
 
-Based on Carl's sketch: a frosted Liquid Glass folder, with two more fanned out behind it, centred on a Finder-blue
-gradient, a small heart in its top-left corner, and a few soft curved lines along
+Based on Carl's sketch: a frosted Liquid Glass folder, with two more fanned out behind it, centred on the Big Sur
+Finder-blue gradient, a small heart in its top-left corner, and a few soft curved lines along
 the inner left and right edges that hint at the inside of the folder. One hue
-family throughout: tinted white glass, a grey glass heart, faint blue lines.
+family throughout: tinted white glass, with the heart and lines etched into it in the same
+translucent blue.
 
 Follows Apple's app icon guidance: few filled shapes with clear edges, a simple
 gradient background that makes the white glyph stand out, no hand-drawn shadows
@@ -18,8 +19,16 @@ Usage: scripts/make-icon-layers.py Resources/AppIcon.icon
 import json, os, sys
 
 out = sys.argv[1] if len(sys.argv) > 1 else "Resources/AppIcon.icon"
-variant = sys.argv[2] if len(sys.argv) > 2 else "grey"
-HEART = {"grey": ("#B4BCC7", "#7E8896"),     # neutral glass grey (default)
+variant = sys.argv[2] if len(sys.argv) > 2 else "glass"
+bg = sys.argv[3] if len(sys.argv) > 3 else "bigsur"
+# Backgrounds: today's Finder blue (sampled: #00C1FF to #00A4FF) or Big Sur's deeper one.
+BG = {"finder": ["srgb:0.00000,0.76078,1.00000,1.00000", "srgb:0.00000,0.61569,1.00000,1.00000"],
+      "bigsur": ["srgb:0.13333,0.72157,0.97255,1.00000", "srgb:0.06667,0.43922,0.90196,1.00000"]}[bg]
+LINE = "#1C1E21" if variant == "black" else "#2F7BEA"
+HEART_OPACITY = 0.3 if variant == "glass" else 1.0   # the glass heart matches the lines
+HEART = {"glass": ("#2F7BEA", "#2F7BEA"),    # same as the lines: etched into the glass (default)
+         "grey": ("#B4BCC7", "#7E8896"),
+         "black": ("#3A3D42", "#16181B"),
          "blue": ("#2F86FF", "#0A55D0"),
          "white": ("#FFFFFF", "#DCEBFF"),
          "red": ("#FF5A4E", "#E8302A")}[variant]
@@ -77,7 +86,7 @@ def heart(cx, cy, s):
 def inner_lines():
     """Soft curved strokes along the inner right edge (the heart owns the left)."""
     w = 16
-    style = f'fill="none" stroke="#2F7BEA" stroke-width="{w}" stroke-linecap="round"'
+    style = f'fill="none" stroke="{LINE}" stroke-width="{w}" stroke-linecap="round"'
     L, Rr = X0 + 46, X1 - 46
     paths = [
         # right edge: a long line that curves into the bottom corner, and a shorter one inside it
@@ -92,7 +101,7 @@ layers = {
     "lines": svg(inner_lines()),
     "heart": svg(heart(X0 + 172, BODY + 140, 170)),
 }
-for name, content in layers.items():
+for name, content in layers.items():  # noqa
     open(os.path.join(out, "Assets", name + ".svg"), "w").write(content)
 
 def layer(name, opacity=1.0, glass=True):
@@ -106,12 +115,10 @@ def group(name, layers, shadow=0.5, translucency=0.0):
             "specular": True}
 
 icon = {
-    # Finder blue, sampled from the Finder icon: #00C1FF at the top to #00A4FF.
-    "fill": {"linear-gradient": ["srgb:0.00000,0.76078,1.00000,1.00000",
-                                 "srgb:0.00000,0.61569,1.00000,1.00000"],
+    "fill": {"linear-gradient": BG,
              "orientation": {"start": {"x": 0.5, "y": 0.0}, "stop": {"x": 0.5, "y": 1.0}}},
     "groups": [                                     # first = frontmost
-        group("Contents", [layer("heart"), layer("lines", opacity=0.22)], shadow=0.2),
+        group("Contents", [layer("heart", opacity=HEART_OPACITY), layer("lines", opacity=0.22)], shadow=0.2),
         # Frosted Liquid Glass folder: tinted white, partly translucent.
         group("Folder", [layer("folder")], shadow=0.5, translucency=0.08),
         group("Fan", [layer("folder-2", opacity=0.65), layer("folder-3", opacity=0.45)],

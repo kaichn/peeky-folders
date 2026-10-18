@@ -1,8 +1,8 @@
 {
   "fill": {
     "linear-gradient": [
-      "srgb:0.00000,0.76078,1.00000,1.00000",
-      "srgb:0.00000,0.61569,1.00000,1.00000"
+      "srgb:0.13333,0.72157,0.97255,1.00000",
+      "srgb:0.06667,0.43922,0.90196,1.00000"
     ],
     "orientation": {
       "start": {
@@ -22,7 +22,7 @@
         {
           "image-name": "heart.svg",
           "name": "heart",
-          "opacity": 1.0,
+          "opacity": 0.3,
           "glass": true,
           "position": {
             "scale": 1,
