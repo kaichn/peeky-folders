@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Generates Resources/AppIcon.icon (Icon Composer format) for Peeky Folders.
 
-Based on Carl's sketch: a white folder centred on a blue gradient, a small
-Health-style heart in its top-left corner, and a few soft curved lines along the
-inner left and right edges that hint at the inside of the folder.
+Based on Carl's sketch: a frosted Liquid Glass folder centred on an azure
+gradient, a small heart in its top-left corner, and a few soft curved lines along
+the inner left and right edges that hint at the inside of the folder. One hue
+family throughout: tinted white glass, deep tonal-blue heart, faint blue lines.
 
 Follows Apple's app icon guidance: few filled shapes with clear edges, a simple
 gradient background that makes the white glyph stand out, no hand-drawn shadows
@@ -17,6 +18,10 @@ Usage: scripts/make-icon-layers.py Resources/AppIcon.icon
 import json, os, sys
 
 out = sys.argv[1] if len(sys.argv) > 1 else "Resources/AppIcon.icon"
+variant = sys.argv[2] if len(sys.argv) > 2 else "blue"
+HEART = {"blue": ("#2F86FF", "#0A55D0"),      # deep tonal azure (default)
+         "white": ("#FFFFFF", "#DCEBFF"),
+         "red": ("#FF5A4E", "#E8302A")}[variant]
 os.makedirs(os.path.join(out, "Assets"), exist_ok=True)
 
 def svg(body):
@@ -24,10 +29,10 @@ def svg(body):
             'viewBox="0 0 1024 1024">' + body + "</svg>\n")
 
 # Folder: one white silhouette, tab on the left.
-X0, X1 = 222, 802
-TOP, BODY, BOT = 296, 358, 728        # tab top, body top, bottom
+X0, X1 = 202, 822
+TOP, BODY, BOT = 286, 352, 742        # tab top, body top, bottom
 R = 52                                # one corner radius throughout
-TAB_W = 226
+TAB_W = 240
 
 def folder():
     t = TOP
@@ -35,7 +40,7 @@ def folder():
             f'C{X0 + TAB_W} {t} {X0 + TAB_W + 12} {t + 10} {X0 + TAB_W + 26} {t + 28} '
             f'L{X0 + TAB_W + 50} {BODY} H{X1 - R} Q{X1} {BODY} {X1} {BODY + R} '
             f'V{BOT - R} Q{X1} {BOT} {X1 - R} {BOT} H{X0 + R} Q{X0} {BOT} {X0} {BOT - R} '
-            f'V{t + R} Q{X0} {t} {X0 + R} {t} Z" fill="#FFFFFF"/>')
+            f'V{t + R} Q{X0} {t} {X0 + R} {t} Z" fill="#EAF3FF"/>')   # soft, blue-tinted white
 
 def heart(cx, cy, s):
     """A plump, Health-style heart, s wide, centred on (cx, cy)."""
@@ -50,13 +55,13 @@ def heart(cx, cy, s):
          f"C{p(74, -88)} {p(100, -64)} {p(100, -30)} "
          f"C{p(100, 22)} {p(10, 74)} {p(0, 80)} Z")
     return ('<defs><linearGradient id="h" x1="0" y1="0" x2="0" y2="1">'
-            '<stop offset="0" stop-color="#FF6482"/><stop offset="1" stop-color="#FF2D55"/>'
+            f'<stop offset="0" stop-color="{HEART[0]}"/><stop offset="1" stop-color="{HEART[1]}"/>'
             f'</linearGradient></defs><path d="{d}" fill="url(#h)"/>')
 
 def inner_lines():
     """Soft curved strokes along the inner left and right edges."""
     w = 16
-    style = f'fill="none" stroke="#B9CBE6" stroke-width="{w}" stroke-linecap="round"'
+    style = f'fill="none" stroke="#2F7BEA" stroke-width="{w}" stroke-linecap="round"'
     L, Rr = X0 + 46, X1 - 46
     paths = [
         # left: a long line that curves into the bottom corner, and a shorter one inside it
@@ -71,7 +76,7 @@ def inner_lines():
 layers = {
     "folder": svg(folder()),
     "lines": svg(inner_lines()),
-    "heart": svg(heart(X0 + 134, BODY + 62, 116)),
+    "heart": svg(heart(X0 + 146, BODY + 72, 140)),
 }
 for name, content in layers.items():
     open(os.path.join(out, "Assets", name + ".svg"), "w").write(content)
@@ -87,10 +92,15 @@ def group(name, layers, shadow=0.5, translucency=0.0):
             "specular": True}
 
 icon = {
-    "fill": {"automatic-gradient": "srgb:0.11765,0.50196,0.96078,1.00000"},   # azure
+    # Light azure at the top to deep blue at the bottom, so the glass has
+    # something to refract.
+    "fill": {"linear-gradient": ["srgb:0.36078,0.67843,1.00000,1.00000",
+                                 "srgb:0.04706,0.36078,0.85490,1.00000"],
+             "orientation": {"start": {"x": 0.5, "y": 0.0}, "stop": {"x": 0.5, "y": 0.75}}},
     "groups": [                                     # first = frontmost
-        group("Heart", [layer("heart")], shadow=0.15),
-        group("Folder", [layer("lines", glass=False), layer("folder")], shadow=0.45),
+        group("Contents", [layer("heart"), layer("lines", opacity=0.22)], shadow=0.2),
+        # Frosted Liquid Glass folder: tinted white, partly translucent.
+        group("Folder", [layer("folder", opacity=0.93)], shadow=0.5, translucency=0.3),
     ],
     "supported-platforms": {"squares": ["macOS"]},
 }
