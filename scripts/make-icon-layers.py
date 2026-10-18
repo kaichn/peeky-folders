@@ -24,9 +24,13 @@ HEART = {"blue": ("#2F86FF", "#0A55D0"),      # deep tonal azure (default)
          "red": ("#FF5A4E", "#E8302A")}[variant]
 os.makedirs(os.path.join(out, "Assets"), exist_ok=True)
 
+SCALE, LIFT = 1.12, 36       # enlarge the whole motif about the centre, then lift it a little
+
 def svg(body):
     return ('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" '
-            'viewBox="0 0 1024 1024">' + body + "</svg>\n")
+            'viewBox="0 0 1024 1024">'
+            f'<g transform="translate(512 {512 - LIFT}) scale({SCALE}) translate(-512 -512)">'
+            + body + "</g></svg>\n")
 
 # Folder: one white silhouette, tab on the left.
 X0, X1 = 202, 822
