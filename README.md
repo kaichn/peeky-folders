@@ -63,6 +63,32 @@ cd peeky-folders
 ./build.sh install
 ```
 
+## Roadmap
+
+Ideas for upcoming versions, roughly in order. Suggestions are welcome in
+[Issues](https://github.com/kaichn/peeky-folders/issues).
+
+**Understand a folder at a glance**
+- [ ] Size bars: each row shows its share of the folder
+- [ ] Summary line, e.g. "412 files · 72% images · 20% video"
+- [ ] Project folders: show the README and git branch/status above the list
+- [ ] Highlight recently changed items
+
+**Archives and disk images**
+- [ ] Preview a file inside an archive without unpacking it
+- [ ] Drag files out of an archive
+- [ ] Archive health: compression ratio, encrypted entries, unusually large contents
+- [ ] Sparse images (`.sparseimage`, `.sparsebundle`) and old ADC-compressed disk images
+
+**Everyday helpers**
+- [ ] Copy a folder listing as a text or Markdown tree
+- [ ] Ignore folders like `node_modules` when calculating sizes
+- [ ] Find duplicate files
+
+**App**
+- [ ] Settings window
+- [ ] German translation
+
 ## License
 
 [MIT](LICENSE) © 2026 Carl Chen.
