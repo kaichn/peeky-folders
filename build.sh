@@ -29,9 +29,11 @@ rm -rf "$APP" build/obj
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APPEX/Contents/MacOS" build/obj
 
 echo "• Compiling icon"
-ICON_OUT="build/icon"
+# Absolute paths: actool runs in a background Xcode service that resolves relative paths
+# against its own working directory, which may be another project.
+ICON_OUT="$PWD/build/icon"
 rm -rf "$ICON_OUT"; mkdir -p "$ICON_OUT"
-xcrun actool Resources/AppIcon.icon --compile "$ICON_OUT" --platform macosx \
+xcrun actool "$PWD/Resources/AppIcon.icon" --compile "$ICON_OUT" --platform macosx \
   --minimum-deployment-target 13.0 --app-icon AppIcon \
   --output-partial-info-plist "$ICON_OUT/partial.plist" >/dev/null
 cp "$ICON_OUT/Assets.car" "$ICON_OUT/AppIcon.icns" "$APP/Contents/Resources/"

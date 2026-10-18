@@ -148,11 +148,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         center.alignment = .center
         let small = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         let credits = NSMutableAttributedString(
-            string: "By order of the Peeky Folders.\nQuick Look for folders and archives.\n\n",
+            string: "By order of the Peeky Folders.\nQuick Look for folders, archives, disk images, installers and apps.\n\n",
             attributes: [.font: small, .foregroundColor: NSColor.labelColor, .paragraphStyle: center])
         credits.append(NSAttributedString(
             string: "github.com/kaichn/peeky-folders",
             attributes: [.font: small, .link: URL(string: "https://github.com/kaichn/peeky-folders")!,
+                         .paragraphStyle: center]))
+        credits.append(NSAttributedString(string: "\n\nEnjoying it? ", attributes: [
+            .font: small, .foregroundColor: NSColor.secondaryLabelColor, .paragraphStyle: center]))
+        credits.append(NSAttributedString(
+            string: "☕ Buy me a coffee",
+            attributes: [.font: small, .link: URL(string: "https://buymeacoffee.com/kaichn")!,
                          .paragraphStyle: center]))
         NSApp.orderFrontStandardAboutPanel(options: [
             .applicationName: "Peeky Folders",

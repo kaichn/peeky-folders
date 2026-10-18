@@ -91,4 +91,4 @@ Ideas for upcoming versions, roughly in order. Suggestions are welcome in
 
 ## License
 
-[MIT](LICENSE) © 2026 Carl Chen.
+[MIT](LICENSE) © 2026 Carl Chen. If Peeky Folders is useful to you, you can [buy me a coffee](https://buymeacoffee.com/kaichn) ☕
