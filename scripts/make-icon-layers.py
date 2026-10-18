@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generates Resources/AppIcon.icon (Icon Composer format) for Peeky Folders.
 
-Based on Carl's sketch: a stack of three frosted Liquid Glass folders centred on an azure
+Based on Carl's sketch: a frosted Liquid Glass folder, with two more fanned out behind it, centred on an azure
 gradient, a small heart in its top-left corner, and a few soft curved lines along
 the inner left and right edges that hint at the inside of the folder. One hue
 family throughout: tinted white glass, deep tonal-blue heart, faint blue lines.
@@ -49,20 +49,27 @@ def folder(inset=0, dy=0, cut=None):
     return (f'<path d="{top}{rest}V{t + R} Q{x0} {t} {x0 + R} {t} Z" '
             'fill="#EAF3FF"/>')   # soft, blue-tinted white
 
-STACK = [(0, 0), (34, -46), (68, -92)]   # (inset, dy): front, middle, back
+# The back folders fan out behind the front one like cards (a remote nod to the
+# Photos icon): same folder, rotated about a point below the stack.
+FAN = [(-8, "folder-3"), (8, "folder-2")]          # degrees, layer
+PIVOT = (512, BOT + 40)
+
+def fanned(angle):
+    return f'<g transform="rotate({angle} {PIVOT[0]} {PIVOT[1]})">{folder()}</g>'
 
 def heart(cx, cy, s):
-    """A plump, Health-style heart, s wide, centred on (cx, cy)."""
+    """A rounded heart, s wide and nearly as tall, centred on (cx, cy)."""
     k = s / 200.0
     def p(x, y):
         return f"{cx + x * k:.1f} {cy + y * k:.1f}"
-    d = (f"M{p(0, 80)} "
-         f"C{p(-10, 74)} {p(-100, 22)} {p(-100, -30)} "
-         f"C{p(-100, -64)} {p(-74, -88)} {p(-46, -88)} "
-         f"C{p(-24, -88)} {p(-8, -76)} {p(0, -60)} "
-         f"C{p(8, -76)} {p(24, -88)} {p(46, -88)} "
-         f"C{p(74, -88)} {p(100, -64)} {p(100, -30)} "
-         f"C{p(100, 22)} {p(10, 74)} {p(0, 80)} Z")
+    # 200 wide by 194 tall (about 1.03:1), close to Apple's own heart proportions.
+    d = (f"M{p(0, 97)} "
+         f"C{p(-12, 89)} {p(-100, 37)} {p(-100, -33)} "
+         f"C{p(-100, -71)} {p(-72, -97)} {p(-44, -97)} "
+         f"C{p(-22, -97)} {p(-6, -85)} {p(0, -65)} "
+         f"C{p(6, -85)} {p(22, -97)} {p(44, -97)} "
+         f"C{p(72, -97)} {p(100, -71)} {p(100, -33)} "
+         f"C{p(100, 37)} {p(12, 89)} {p(0, 97)} Z")
     return ('<defs><linearGradient id="h" x1="0" y1="0" x2="0" y2="1">'
             f'<stop offset="0" stop-color="{HEART[0]}"/><stop offset="1" stop-color="{HEART[1]}"/>'
             f'</linearGradient></defs><path d="{d}" fill="url(#h)"/>')
@@ -80,12 +87,10 @@ def inner_lines():
     return "".join(f'<path d="{d}" {style}/>' for d in paths)
 
 layers = {
-    "folder": svg(folder(*STACK[0])),
-    # Back folders stop just below the top edge of the folder in front of them.
-    "folder-2": svg(folder(*STACK[1], cut=BODY + 4)),
-    "folder-3": svg(folder(*STACK[2], cut=BODY + STACK[1][1] + 4)),
+    "folder": svg(folder()),
+    **{name: svg(fanned(angle)) for angle, name in FAN},
     "lines": svg(inner_lines()),
-    "heart": svg(heart(X0 + 172, BODY + 140, 178)),
+    "heart": svg(heart(X0 + 172, BODY + 140, 170)),
 }
 for name, content in layers.items():
     open(os.path.join(out, "Assets", name + ".svg"), "w").write(content)
@@ -109,9 +114,9 @@ icon = {
     "groups": [                                     # first = frontmost
         group("Contents", [layer("heart"), layer("lines", opacity=0.22)], shadow=0.2),
         # Frosted Liquid Glass folder: tinted white, partly translucent.
-        group("Folder", [layer("folder", opacity=0.93)], shadow=0.5, translucency=0.3),
-        group("Folder 2", [layer("folder-2", opacity=0.7)], shadow=0.4, translucency=0.4),
-        group("Folder 3", [layer("folder-3", opacity=0.5)], shadow=0.3, translucency=0.5),
+        group("Folder", [layer("folder")], shadow=0.5, translucency=0.08),
+        group("Fan", [layer("folder-2", opacity=0.65), layer("folder-3", opacity=0.45)],
+              shadow=0.3, translucency=0.5),
     ],
     "supported-platforms": {"squares": ["macOS"]},
 }
