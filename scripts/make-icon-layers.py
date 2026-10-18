@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generates Resources/AppIcon.icon (Icon Composer format) for Peeky Folders.
 
-Based on Carl's sketch: a frosted Liquid Glass folder, with two more fanned out behind it, centred on an azure
+Based on Carl's sketch: a frosted Liquid Glass folder, with two more fanned out behind it, centred on a Finder-blue
 gradient, a small heart in its top-left corner, and a few soft curved lines along
 the inner left and right edges that hint at the inside of the folder. One hue
 family throughout: tinted white glass, a grey glass heart, faint blue lines.
@@ -106,11 +106,10 @@ def group(name, layers, shadow=0.5, translucency=0.0):
             "specular": True}
 
 icon = {
-    # Light azure at the top to deep blue at the bottom, so the glass has
-    # something to refract.
-    "fill": {"linear-gradient": ["srgb:0.36078,0.67843,1.00000,1.00000",
-                                 "srgb:0.04706,0.36078,0.85490,1.00000"],
-             "orientation": {"start": {"x": 0.5, "y": 0.0}, "stop": {"x": 0.5, "y": 0.75}}},
+    # Finder blue, sampled from the Finder icon: #00C1FF at the top to #00A4FF.
+    "fill": {"linear-gradient": ["srgb:0.00000,0.76078,1.00000,1.00000",
+                                 "srgb:0.00000,0.61569,1.00000,1.00000"],
+             "orientation": {"start": {"x": 0.5, "y": 0.0}, "stop": {"x": 0.5, "y": 1.0}}},
     "groups": [                                     # first = frontmost
         group("Contents", [layer("heart"), layer("lines", opacity=0.22)], shadow=0.2),
         # Frosted Liquid Glass folder: tinted white, partly translucent.
