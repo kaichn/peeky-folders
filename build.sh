@@ -53,7 +53,7 @@ for arch in "${ARCHS[@]}"; do
   echo "• Compiling app ($arch)"
   compile "$arch" PeekyFolders "build/obj/PeekyFolders-$arch" \
     -framework QuickLookThumbnailing \
-    Sources/Shared/*.swift Sources/App/main.swift
+    Sources/Shared/*.swift Sources/App/*.swift
 done
 lipo -create build/obj/PeekyFoldersPreview-* -output "$APPEX/Contents/MacOS/PeekyFoldersPreview"
 lipo -create build/obj/PeekyFolders-* -output "$APP/Contents/MacOS/PeekyFolders"

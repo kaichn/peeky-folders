@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = makeMainMenu()
         if !openedFiles { showWelcome() }
         NSApp.activate(ignoringOtherApps: true)
+        UpdateChecker.shared.checkInBackgroundIfDue()
     }
 
     func application(_ sender: NSApplication, open urls: [URL]) {
@@ -118,13 +119,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return row
     }
 
+    /// Set by `--welcome-snapshot`, so documentation shows a fresh install, not this Mac's state.
+    static var freshInstallPreview = false
+
     static var isInApplications: Bool {
+        if freshInstallPreview { return false }
         let dir = Bundle.main.bundleURL.deletingLastPathComponent().path
         return dir == "/Applications" || dir == NSHomeDirectory() + "/Applications"
     }
 
     /// Asks pluginkit whether the Quick Look extension is enabled (its line starts with "+").
     static var isExtensionEnabled: Bool {
+        if freshInstallPreview { return false }
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
         p.arguments = ["-m", "-i", "com.charl.PeekyFolders.Preview"]
@@ -216,8 +222,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             i.keyEquivalentModifierMask = mods
             return i
         }
+        func updateItem(_ title: String, _ action: Selector) -> NSMenuItem {
+            let i = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            i.target = UpdateChecker.shared
+            return i
+        }
         submenu("Peeky Folders", [
             item("About Peeky Folders", #selector(showAbout)),
+            updateItem("Check for Updates…", #selector(UpdateChecker.checkNow(_:))),
+            {
+                let i = updateItem("Check for Updates Automatically", #selector(UpdateChecker.toggleAutomatic(_:)))
+                i.state = UpdateChecker.shared.checksAutomatically ? .on : .off
+                return i
+            }(),
             .separator(),
             item("Hide Peeky Folders", #selector(NSApplication.hide(_:)), "h"),
             item("Hide Others", #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),
@@ -276,6 +293,7 @@ let app = NSApplication.shared
 if let i = CommandLine.arguments.firstIndex(of: "--welcome-snapshot") {
     // Developer aid: `PeekyFolders --welcome-snapshot <out.png>` renders the welcome screen.
     app.setActivationPolicy(.prohibited)
+    AppDelegate.freshInstallPreview = true
     let view = AppDelegate().makeWelcomeView()
     let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 520),
                           styleMask: [.borderless], backing: .buffered, defer: false)

@@ -45,5 +45,14 @@ built with `swiftc` from `build.sh`; there's no Xcode project. Repo: github.com/
 - `PeekyFolders --snapshot <folder-or-archive> out.png [list|icons]` renders the browser to a PNG,
   and `PeekyFolders --welcome-snapshot out.png` renders the welcome window. Neither needs Screen
   Recording permission.
-- Screenshots in `docs/` use a demo folder made from macOS's sample pictures in
-  `/Library/User Pictures`, not the user's files.
+- **Docs images are rendered, never captured.** Don't use `screencapture` or screenshots of the
+  user's screen: System Settings, Finder and Quick Look windows show their other apps and files.
+  App screenshots come from `--snapshot` on a demo folder made from macOS's sample pictures
+  (`/Library/User Pictures`). Install-step pictures come from `--welcome-snapshot` (always
+  renders a fresh install) and `scripts/make-install-images.swift`.
+
+## Update checker
+
+`Sources/App/UpdateChecker.swift` reads `api.github.com/repos/kaichn/peeky-folders/releases/latest`
+once a day on launch (silent unless newer) and from **Check for Updates…** in the app menu. Tags
+must look like `v1.2` or `v1.2.3` for the version comparison.
