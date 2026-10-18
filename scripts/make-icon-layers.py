@@ -30,15 +30,15 @@ def svg(body):
 
 # Folder: one white silhouette, tab on the left.
 X0, X1 = 202, 822
-TOP, BODY, BOT = 286, 352, 742        # tab top, body top, bottom
+TOP, BODY, BOT = 318, 352, 742        # tab top, body top, bottom
 R = 52                                # one corner radius throughout
 TAB_W = 240
 
 def folder():
     t = TOP
     return (f'<path d="M{X0 + R} {t} H{X0 + TAB_W - 26} '
-            f'C{X0 + TAB_W} {t} {X0 + TAB_W + 12} {t + 10} {X0 + TAB_W + 26} {t + 28} '
-            f'L{X0 + TAB_W + 50} {BODY} H{X1 - R} Q{X1} {BODY} {X1} {BODY + R} '
+            f'C{X0 + TAB_W + 6} {t} {X0 + TAB_W + 18} {t + 6} {X0 + TAB_W + 30} {t + 18} '
+            f'L{X0 + TAB_W + 40} {BODY} H{X1 - R} Q{X1} {BODY} {X1} {BODY + R} '
             f'V{BOT - R} Q{X1} {BOT} {X1 - R} {BOT} H{X0 + R} Q{X0} {BOT} {X0} {BOT - R} '
             f'V{t + R} Q{X0} {t} {X0 + R} {t} Z" fill="#EAF3FF"/>')   # soft, blue-tinted white
 
@@ -59,15 +59,12 @@ def heart(cx, cy, s):
             f'</linearGradient></defs><path d="{d}" fill="url(#h)"/>')
 
 def inner_lines():
-    """Soft curved strokes along the inner left and right edges."""
+    """Soft curved strokes along the inner right edge (the heart owns the left)."""
     w = 16
     style = f'fill="none" stroke="#2F7BEA" stroke-width="{w}" stroke-linecap="round"'
     L, Rr = X0 + 46, X1 - 46
     paths = [
-        # left: a long line that curves into the bottom corner, and a shorter one inside it
-        f'M{L} {BODY + 116} V{BOT - 92} Q{L} {BOT - 46} {L + 40} {BOT - 46}',
-        f'M{L + 52} {BODY + 168} V{BOT - 150}',
-        # right: the mirror image, a little lower
+        # right edge: a long line that curves into the bottom corner, and a shorter one inside it
         f'M{Rr} {BODY + 92} V{BOT - 92} Q{Rr} {BOT - 46} {Rr - 40} {BOT - 46}',
         f'M{Rr - 52} {BODY + 150} V{BOT - 136}',
     ]
@@ -76,7 +73,7 @@ def inner_lines():
 layers = {
     "folder": svg(folder()),
     "lines": svg(inner_lines()),
-    "heart": svg(heart(X0 + 146, BODY + 72, 140)),
+    "heart": svg(heart(X0 + 176, BODY + 112, 200)),
 }
 for name, content in layers.items():
     open(os.path.join(out, "Assets", name + ".svg"), "w").write(content)
