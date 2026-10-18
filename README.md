@@ -62,4 +62,4 @@ cd peeky-folders
 
 ## License
 
-[MIT](LICENSE) © 2026 Carl Chen. Inspired by [Folder Preview](https://apps.apple.com/app/folder-preview/id6698876601).
+[MIT](LICENSE) © 2026 Carl Chen.
