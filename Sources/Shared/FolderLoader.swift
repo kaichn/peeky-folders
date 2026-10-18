@@ -29,7 +29,9 @@ enum FolderLoader {
         let urls = try FileManager.default.contentsOfDirectory(
             at: url, includingPropertiesForKeys: keys,
             options: showHidden ? [] : [.skipsHiddenFiles])
-        return urls.map(entry(for:))
+        let entries = urls.map(entry(for:))
+        if dir.browsesPackages { entries.forEach { $0.browsesPackages = true } }
+        return entries
     }
 
     /// Recursive size of a folder using fts (much faster than FileManager enumeration).

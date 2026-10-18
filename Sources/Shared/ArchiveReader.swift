@@ -17,7 +17,7 @@ enum ArchiveError: LocalizedError {
 
 /// Lists archive contents with libarchive: zip/jar, tar, gz/tgz, bz2, xz, 7z, rar, cpio, iso, …
 enum ArchiveReader {
-    private struct Item { var path: String; var isDir: Bool; var size: Int64?; var mtime: Date? }
+    struct Item { var path: String; var isDir: Bool; var size: Int64?; var mtime: Date? }
 
     static func list(url: URL, showHidden: Bool) throws -> Entry {
         let items: [Item]
@@ -85,6 +85,41 @@ enum ArchiveReader {
         return items
     }
 
+    /// Reads an archive once: returns every entry name, plus the contents of the entries
+    /// `wanted` accepts (kept small: manifests and metadata, not payloads).
+    static func extract(_ url: URL, maxBytes: Int = 64 << 20,
+                        wanted: (String) -> Bool) throws -> (names: [String], files: [String: Data]) {
+        guard let a = archive_read_new() else { throw ArchiveError.cannotOpen("out of memory") }
+        defer { archive_read_free(a) }
+        archive_read_support_filter_all(a)
+        archive_read_support_format_all(a)
+        guard archive_read_open_filename(a, url.path, 1 << 16) == 0 else {
+            throw ArchiveError.cannotOpen(archive_error_string(a).map { String(cString: $0) } ?? "unknown error")
+        }
+        var names: [String] = []
+        var files: [String: Data] = [:]
+        var entry: OpaquePointer?
+        while true {
+            let r = archive_read_next_header(a, &entry)
+            guard r == 0 || r == -20, let e = entry else { break }      // ARCHIVE_OK or ARCHIVE_WARN
+            let name = decodeName(e)
+            names.append(name)
+            guard wanted(name) else { archive_read_data_skip(a); continue }
+            // Stop at the entry's recorded size: Apple's libarchive can return stale bytes past
+            // the end of a compressed xar entry.
+            let limit = archive_entry_size_is_set(e) != 0 ? min(Int(archive_entry_size(e)), maxBytes) : maxBytes
+            var data = Data()
+            var buffer = [UInt8](repeating: 0, count: 1 << 16)
+            while data.count < limit {
+                let n = buffer.withUnsafeMutableBytes { archive_read_data(a, $0.baseAddress, $0.count) }
+                if n <= 0 { break }
+                data.append(buffer, count: n)
+            }
+            files[name] = data.prefix(limit)
+        }
+        return (names, files)
+    }
+
     /// Filename encoding detection.
     ///
     /// Apple's libarchive decodes zip names that lack the UTF-8 flag as CP437. That is right
@@ -93,7 +128,15 @@ enum ArchiveReader {
     /// mojibake, we re-encode it to CP437 to recover the original bytes and try again.
     private static func decodeName(_ e: OpaquePointer) -> String {
         guard let p = archive_entry_pathname_utf8(e) ?? archive_entry_pathname(e) else { return "?" }
-        return repairEncoding(String(cString: p))
+        return repairEncoding(undoubled(String(cString: p)))
+    }
+
+    /// Apple's libarchive returns nested xar paths twice ("a.pkg/Boma.pkg/Bom"). Undo that.
+    static func undoubled(_ s: String) -> String {
+        let chars = Array(s)
+        guard chars.count >= 4, chars.count % 2 == 0, s.contains("/") else { return s }
+        let half = chars.count / 2
+        return chars[..<half] == chars[half...] ? String(chars[..<half]) : s
     }
 
     private static let cp437 = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(
@@ -129,7 +172,7 @@ enum ArchiveReader {
         }
     }
 
-    private static func buildTree(_ items: [Item], rootName: String, showHidden: Bool) -> Entry {
+    static func buildTree(_ items: [Item], rootName: String, showHidden: Bool) -> Entry {
         let root = makeDir(name: rootName, path: "")
         root.children = []
         var dirs: [String: Entry] = ["": root]

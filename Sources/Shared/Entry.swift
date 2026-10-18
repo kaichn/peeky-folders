@@ -19,6 +19,7 @@ final class Entry: NSObject {
     var icon: NSImage?
     var thumbnail: NSImage?
     var thumbnailSide: CGFloat = 0  // largest side requested so far
+    var browsesPackages = false     // inside an app bundle, nested bundles open like folders too
 
     init(name: String, fileURL: URL?, archivePath: String?, isDirectory: Bool, isPackage: Bool,
          kind: String, utType: UTType?, size: Int64?, modified: Date?, created: Date?) {
@@ -34,8 +35,9 @@ final class Entry: NSObject {
         self.created = created
     }
 
-    /// Folders you can browse into. App bundles and other packages are treated like files.
-    var isFolderLike: Bool { isDirectory && !isPackage }
+    /// Folders you can browse into. App bundles and other packages are treated like files,
+    /// except when previewing a bundle itself.
+    var isFolderLike: Bool { isDirectory && (!isPackage || browsesPackages) }
 
     var displayPath: String { fileURL?.path ?? archivePath ?? name }
 }

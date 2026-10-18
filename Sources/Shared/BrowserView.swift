@@ -25,7 +25,9 @@ final class BrowserView: NSView {
     private var rootIcon: NSImage?
     private var archiveFileSize: Int64?
     private var isArchive = false
+    private var details: [Detail] = []      // extra header line: app version, package signer, …
     private var stack: [Entry] = []          // navigation path; last = folder being shown
+    private var startDepth = 1               // stack depth the preview opened at
     private var displayed: [Entry] = []      // sorted children of stack.last
 
     private let sizeQueue: OperationQueue = {
@@ -45,6 +47,7 @@ final class BrowserView: NSView {
     private let headerIcon = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
     private let subtitleLabel = NSTextField(labelWithString: "")
+    private let detailLabel = NSTextField(labelWithString: "")
     private let modeControl = NSSegmentedControl()
     private let gearButton = NSPopUpButton(frame: .zero, pullsDown: true)
     private let outline = NSOutlineView()
@@ -86,27 +89,47 @@ final class BrowserView: NSView {
         let showHidden = settings.showHidden
         let limitMB = settings.archiveLimitMB
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let result = Result<(Entry, Bool, Int64?), Error> {
-                let rv = try url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey])
+            let result = Result<(Entry, Bool, Int64?, [Detail]), Error> {
+                let rv = try url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey, .fileSizeKey])
+                let fileSize = rv.fileSize.map(Int64.init)
+                // Installer packages: the file list comes from their manifests, so size limits don't apply.
+                if PackageReader.isPackage(url) {
+                    let (root, details) = try PackageReader.read(url, showHidden: showHidden)
+                    return (root, true, rv.isDirectory == true ? nil : fileSize, details)
+                }
                 if rv.isDirectory == true {
                     let root = FolderLoader.entry(for: url)
+                    var details: [Detail] = []
+                    if rv.isPackage == true {                 // an app or other bundle: browse inside it
+                        root.browsesPackages = true
+                        details = BundleInspector.details(url)
+                    }
                     root.children = try FolderLoader.children(of: root, showHidden: showHidden)
-                    return (root, false, nil)
+                    return (root, false, nil, details)
                 }
-                let fileSize = Int64(rv.fileSize ?? 0)
                 let limit = Int64(limitMB) * 1_048_576
-                if limit > 0, fileSize > limit { throw ArchiveError.tooLarge(fileSize, limit) }
-                return (try ArchiveReader.list(url: url, showHidden: showHidden), true, fileSize)
+                if limit > 0, let fileSize, fileSize > limit { throw ArchiveError.tooLarge(fileSize, limit) }
+                return (try ArchiveReader.list(url: url, showHidden: showHidden), true, fileSize, [])
             }
             DispatchQueue.main.async {
                 guard let self else { return }
                 switch result {
-                case .success(let (root, archive, fileSize)):
+                case .success(let (root, archive, fileSize, details)):
                     self.isArchive = archive
                     self.archiveFileSize = fileSize
+                    self.details = details
                     self.rootIcon = NSWorkspace.shared.icon(forFile: url.path)
                     self.sortTree(root)
                     self.stack = [root]
+                    // Archives and packages often wrap everything in one folder ("Applications/Foo"),
+                    // and apps in "Contents": open at the first level with real content.
+                    if archive || root.browsesPackages {
+                        while let only = self.stack.last?.children, only.count == 1, only[0].isFolderLike,
+                              !self.loadedChildren(only[0]).isEmpty {
+                            self.stack.append(only[0])
+                        }
+                    }
+                    self.startDepth = self.stack.count
                     self.showCurrent()
                     completion?(nil)
                 case .failure(let error):
@@ -129,6 +152,8 @@ final class BrowserView: NSView {
         grid.reloadData()
         titleLabel.stringValue = url.lastPathComponent
         subtitleLabel.stringValue = ""
+        details = []
+        showDetails()
         headerIcon.image = NSWorkspace.shared.icon(forFile: url.path)
         backButton.isHidden = true
         messageLabel.stringValue = error.localizedDescription
@@ -158,7 +183,7 @@ final class BrowserView: NSView {
         messageLabel.isHidden = !displayed.isEmpty
         backButton.isHidden = stack.count < 2
         titleLabel.stringValue = stack.map(\.name).joined(separator: " › ")
-        headerIcon.image = stack.count == 1 ? rootIcon : IconCache.icon(for: current)
+        headerIcon.image = stack.count <= startDepth ? rootIcon : IconCache.icon(for: current)
         updateHeader()
     }
 
@@ -339,10 +364,28 @@ final class BrowserView: NSView {
         } else if displayed.contains(where: { $0.size != nil }) {
             parts.append(Self.bytes(total))
         }
-        if isArchive, stack.count == 1, let packed = archiveFileSize {
+        if isArchive, stack.count <= startDepth, let packed = archiveFileSize {
             parts.append("\(Self.bytes(packed)) compressed")
         }
         subtitleLabel.stringValue = parts.joined(separator: " · ")
+        showDetails()
+    }
+
+    /// The third header line, for apps and packages.
+    private func showDetails() {
+        let visible = !details.isEmpty
+        detailLabel.isHidden = !visible
+        guard visible else { return }
+        let font = NSFont.systemFont(ofSize: 11)
+        let line = NSMutableAttributedString()
+        for (i, d) in details.enumerated() {
+            if i > 0 { line.append(NSAttributedString(string: " · ", attributes: [.font: font, .foregroundColor: NSColor.tertiaryLabelColor])) }
+            let text = d.warning ? "⚠︎ " + d.text : d.text
+            line.append(NSAttributedString(string: text, attributes: [
+                .font: font, .foregroundColor: d.warning ? NSColor.systemOrange : NSColor.secondaryLabelColor]))
+        }
+        detailLabel.attributedStringValue = line
+        detailLabel.toolTip = details.map(\.text).joined(separator: "\n")
     }
 
     // MARK: - Setup
@@ -365,7 +408,12 @@ final class BrowserView: NSView {
         subtitleLabel.font = .systemFont(ofSize: 11)
         subtitleLabel.textColor = .secondaryLabelColor
         subtitleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let textStack = NSStackView(views: [titleLabel, subtitleLabel])
+        detailLabel.lineBreakMode = .byTruncatingTail
+        detailLabel.maximumNumberOfLines = 1
+        detailLabel.cell?.truncatesLastVisibleLine = true
+        detailLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        detailLabel.isHidden = true
+        let textStack = NSStackView(views: [titleLabel, subtitleLabel, detailLabel])
         textStack.orientation = .vertical
         textStack.alignment = .leading
         textStack.spacing = 1
@@ -804,6 +852,8 @@ final class IconItem: NSCollectionViewItem {
         detailLabel.font = .systemFont(ofSize: 10)
         detailLabel.textColor = .secondaryLabelColor
         detailLabel.lineBreakMode = .byTruncatingTail
+        detailLabel.maximumNumberOfLines = 1
+        detailLabel.cell?.truncatesLastVisibleLine = true
         for sub in [iconView, nameLabel, detailLabel] {
             sub.translatesAutoresizingMaskIntoConstraints = false
             v.addSubview(sub)
