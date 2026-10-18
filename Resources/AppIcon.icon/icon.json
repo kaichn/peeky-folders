@@ -17,12 +17,12 @@
   },
   "groups": [
     {
-      "name": "Contents",
+      "name": "Heart",
       "layers": [
         {
           "image-name": "heart.svg",
           "name": "heart",
-          "opacity": 0.3,
+          "opacity": 0.62,
           "glass": true,
           "position": {
             "scale": 1,
@@ -31,7 +31,21 @@
               0
             ]
           }
-        },
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.2
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
+      },
+      "specular": true
+    },
+    {
+      "name": "Lines",
+      "layers": [
         {
           "image-name": "lines.svg",
           "name": "lines",
@@ -48,7 +62,7 @@
       ],
       "shadow": {
         "kind": "neutral",
-        "opacity": 0.2
+        "opacity": 0.0
       },
       "translucency": {
         "enabled": false,
