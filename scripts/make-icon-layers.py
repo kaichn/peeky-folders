@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generates Resources/AppIcon.icon (Icon Composer format) for Peeky Folders.
 
-Based on Carl's sketch: a frosted Liquid Glass folder centred on an azure
+Based on Carl's sketch: a stack of three frosted Liquid Glass folders centred on an azure
 gradient, a small heart in its top-left corner, and a few soft curved lines along
 the inner left and right edges that hint at the inside of the folder. One hue
 family throughout: tinted white glass, deep tonal-blue heart, faint blue lines.
@@ -30,17 +30,26 @@ def svg(body):
 
 # Folder: one white silhouette, tab on the left.
 X0, X1 = 202, 822
-TOP, BODY, BOT = 318, 352, 742        # tab top, body top, bottom
+TOP, BODY, BOT = 352, 386, 776        # tab top, body top, bottom
 R = 52                                # one corner radius throughout
-TAB_W = 240
+TAB_W = 176
 
-def folder():
-    t = TOP
-    return (f'<path d="M{X0 + R} {t} H{X0 + TAB_W - 26} '
-            f'C{X0 + TAB_W + 6} {t} {X0 + TAB_W + 18} {t + 6} {X0 + TAB_W + 30} {t + 18} '
-            f'L{X0 + TAB_W + 40} {BODY} H{X1 - R} Q{X1} {BODY} {X1} {BODY + R} '
-            f'V{BOT - R} Q{X1} {BOT} {X1 - R} {BOT} H{X0 + R} Q{X0} {BOT} {X0} {BOT - R} '
-            f'V{t + R} Q{X0} {t} {X0 + R} {t} Z" fill="#EAF3FF"/>')   # soft, blue-tinted white
+def folder(inset=0, dy=0, cut=None):
+    """One folder silhouette; inset narrows it, dy moves it up (negative) for the stack.
+    cut ends it with a flat bottom at that y, so a back folder doesn't show through
+    the glass of the one in front."""
+    x0, x1, t, body, bot = X0 + inset, X1 - inset, TOP + dy, BODY + dy, BOT + dy
+    top = (f'M{x0 + R} {t} H{x0 + TAB_W - 26} '
+           f'C{x0 + TAB_W + 6} {t} {x0 + TAB_W + 18} {t + 6} {x0 + TAB_W + 30} {t + 18} '
+           f'L{x0 + TAB_W + 40} {body} H{x1 - R} Q{x1} {body} {x1} {body + R} ')
+    if cut is None:
+        rest = (f'V{bot - R} Q{x1} {bot} {x1 - R} {bot} H{x0 + R} Q{x0} {bot} {x0} {bot - R} ')
+    else:
+        rest = f'V{cut} H{x0} '
+    return (f'<path d="{top}{rest}V{t + R} Q{x0} {t} {x0 + R} {t} Z" '
+            'fill="#EAF3FF"/>')   # soft, blue-tinted white
+
+STACK = [(0, 0), (34, -46), (68, -92)]   # (inset, dy): front, middle, back
 
 def heart(cx, cy, s):
     """A plump, Health-style heart, s wide, centred on (cx, cy)."""
@@ -71,9 +80,12 @@ def inner_lines():
     return "".join(f'<path d="{d}" {style}/>' for d in paths)
 
 layers = {
-    "folder": svg(folder()),
+    "folder": svg(folder(*STACK[0])),
+    # Back folders stop just below the top edge of the folder in front of them.
+    "folder-2": svg(folder(*STACK[1], cut=BODY + 4)),
+    "folder-3": svg(folder(*STACK[2], cut=BODY + STACK[1][1] + 4)),
     "lines": svg(inner_lines()),
-    "heart": svg(heart(X0 + 176, BODY + 112, 200)),
+    "heart": svg(heart(X0 + 172, BODY + 140, 178)),
 }
 for name, content in layers.items():
     open(os.path.join(out, "Assets", name + ".svg"), "w").write(content)
@@ -98,6 +110,8 @@ icon = {
         group("Contents", [layer("heart"), layer("lines", opacity=0.22)], shadow=0.2),
         # Frosted Liquid Glass folder: tinted white, partly translucent.
         group("Folder", [layer("folder", opacity=0.93)], shadow=0.5, translucency=0.3),
+        group("Folder 2", [layer("folder-2", opacity=0.7)], shadow=0.4, translucency=0.4),
+        group("Folder 3", [layer("folder-3", opacity=0.5)], shadow=0.3, translucency=0.5),
     ],
     "supported-platforms": {"squares": ["macOS"]},
 }

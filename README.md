@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/icon.png" alt="Peeky Folders app icon: a frosted glass folder with a blue heart on an azure gradient" width="128">
+  <img src="docs/icon.png" alt="Peeky Folders app icon: a stack of three frosted glass folders with a blue heart on the front one, on an azure gradient" width="128">
 </p>
 
 <h1 align="center">Peeky Folders</h1>
