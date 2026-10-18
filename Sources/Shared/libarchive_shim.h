@@ -26,3 +26,7 @@ int archive_entry_size_is_set(struct archive_entry *);
 time_t archive_entry_mtime(struct archive_entry *);
 int archive_entry_mtime_is_set(struct archive_entry *);
 mode_t archive_entry_filetype(struct archive_entry *);
+
+// bzip2 (/usr/lib/libbz2), for bzip2-compressed disk images.
+int BZ2_bzBuffToBuffDecompress(char *dest, unsigned int *destLen, char *source,
+                               unsigned int sourceLen, int small, int verbosity);

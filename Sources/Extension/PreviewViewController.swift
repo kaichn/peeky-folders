@@ -19,7 +19,13 @@ final class PreviewViewController: NSViewController, QLPreviewingController {
     }
 
     func preparePreviewOfFile(at url: URL, completionHandler handler: @escaping (Error?) -> Void) {
+        // Types turned off in the ⚙︎ menu go to the system's own preview.
+        guard Settings.shared.handlesInQuickLook(url) else {
+            handler(CocoaError(.featureUnsupported))
+            return
+        }
         _ = view
+        browser.isQuickLook = true
         browser.load(url: url) { [weak self] error in
             if let error {
                 log.error("Preview failed: \(error.localizedDescription, privacy: .public)")

@@ -40,8 +40,8 @@ cp "$ICON_OUT/Assets.car" "$ICON_OUT/AppIcon.icns" "$APP/Contents/Resources/"
 compile() {
   local arch="$1" module="$2" out="$3"; shift 3
   swiftc -sdk "$SDK" -target "$arch-apple-macos13.0" -swift-version 5 -O \
-    -import-objc-header Sources/Shared/libarchive_shim.h -larchive \
-    -module-name "$module" -module-cache-path build/obj/cache "$@" -o "$out"
+    -import-objc-header Sources/Shared/libarchive_shim.h -larchive -lbz2 \
+    -module-name "$module" "$@" -o "$out"
 }
 
 for arch in "${ARCHS[@]}"; do

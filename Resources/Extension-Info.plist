@@ -39,6 +39,10 @@
 				<string>com.rarlab.rar-archive</string>
 				<string>public.cpio-archive</string>
 				<string>com.apple.xar-archive</string>
+				<string>com.apple.installer-package-archive</string>
+				<string>com.apple.installer-package</string>
+				<string>com.apple.application-bundle</string>
+				<string>com.apple.disk-image-udif</string>
 			</array>
 		</dict>
 	</dict>

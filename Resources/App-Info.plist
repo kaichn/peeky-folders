@@ -30,6 +30,9 @@
 				<string>public.archive</string>
 				<string>public.zip-archive</string>
 				<string>org.gnu.gnu-zip-archive</string>
+				<string>com.apple.installer-package-archive</string>
+				<string>com.apple.application-bundle</string>
+				<string>com.apple.disk-image-udif</string>
 			</array>
 		</dict>
 	</array>

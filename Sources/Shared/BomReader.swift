@@ -56,7 +56,7 @@ enum BomReader {
             if guardCount > 64 { throw BomError.notABom }
         }
 
-        struct Raw { var parent: UInt32; var name: String; var isDir: Bool; var size: Int64?; var mtime: Date? }
+        struct Raw { var parent: UInt32; var name: String; var isDir: Bool; var size: Int64?; var mtime: Date?; var isLink: Bool }
         var byID: [UInt32: Raw] = [:]
         var order: [UInt32] = []
         var visited = Set<Int>()
@@ -76,7 +76,8 @@ enum BomReader {
                 let name = try bom.cString(file + 4)
                 byID[id] = Raw(parent: parent, name: name, isDir: type == 2,
                                size: type == 1 ? Int64(size) : nil,
-                               mtime: mtime > 0 ? Date(timeIntervalSince1970: TimeInterval(mtime)) : nil)
+                               mtime: mtime > 0 ? Date(timeIntervalSince1970: TimeInterval(mtime)) : nil,
+                               isLink: type == 3)
                 order.append(id)
             }
             if forward == 0 { break }
@@ -94,7 +95,7 @@ enum BomReader {
         }
         return order.compactMap { id in
             guard let raw = byID[id] else { return nil }
-            return ArchiveReader.Item(path: path(id), isDir: raw.isDir, size: raw.size, mtime: raw.mtime)
+            return ArchiveReader.Item(path: path(id), isDir: raw.isDir, size: raw.size, mtime: raw.mtime, isLink: raw.isLink)
         }
     }
 }

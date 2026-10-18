@@ -51,6 +51,19 @@ built with `swiftc` from `build.sh`; there's no Xcode project. Repo: github.com/
   (`/Library/User Pictures`). Install-step pictures come from `--welcome-snapshot` (always
   renders a fresh install) and `scripts/make-install-images.swift`.
 
+## File types
+
+- **Archives:** libarchive (`ArchiveReader`). Apple's build has two xar quirks handled there:
+  stale bytes past an entry's end (reads stop at the recorded size) and doubled nested paths.
+- **Installer packages:** `PackageReader` lists files from the Bom manifests (`BomReader`) and
+  verifies the xar signature itself (checksum, RSA signature, certificate trust).
+- **Disk images:** `DiskImage.swift` reads UDIF chunk tables and decompresses on demand;
+  `HFSPlusReader` and `APFSReader` walk the catalog. Never mount images to preview them.
+- **Apps:** `BundleInspector` (version, Mach-O architectures, code signature).
+- Apps, packages and disk images can each be handed back to the system preview from the
+  ⚙︎ menu ("Use Peeky Folders For"). Test files: build them with `hdiutil`, `pkgbuild` and
+  `productbuild` in the scratchpad; downloaded samples go in their own folder.
+
 ## Update checker
 
 `Sources/App/UpdateChecker.swift` reads `api.github.com/repos/kaichn/peeky-folders/releases/latest`

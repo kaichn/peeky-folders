@@ -52,7 +52,7 @@ enum IconCache {
             e.icon = i
             return i
         }
-        let type: UTType = e.isDirectory ? .folder : (e.utType ?? .data)
+        let type: UTType = e.utType ?? (e.isDirectory ? .folder : .data)
         if let i = byType[type.identifier] { return i }
         let i = NSWorkspace.shared.icon(for: type)
         byType[type.identifier] = i

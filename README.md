@@ -4,7 +4,7 @@
 
 <h1 align="center">Peeky Folders</h1>
 
-<p align="center"><b>Press Space on a folder or archive in Finder and see what's inside.</b></p>
+<p align="center"><b>Press Space on a folder, archive, disk image, installer or app in Finder and see what's inside.</b></p>
 
 <p align="center">
   <img src="docs/screenshots/icons.png" alt="Peeky Folders showing a Photos folder in icon view, with thumbnails and file sizes" width="720">
@@ -27,6 +27,9 @@
 ## Features
 
 - Quick Look for **folders and archives**: zip, tar, gz, 7z, rar, xz, bz2, jar and more
+- **Disk images** (.dmg): see the files inside without mounting (HFS+ and APFS)
+- **Installer packages** (.pkg): every file it would install, whether it runs install scripts, and who signed it
+- **Apps**: browse inside a bundle, with version, architectures and signer
 - **List and icon views** with thumbnails, sizes, dates and kinds
 - **Folder sizes** calculated in the background
 - **Browse into subfolders**, copy items or their paths

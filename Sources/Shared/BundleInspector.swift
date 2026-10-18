@@ -49,16 +49,16 @@ enum BundleInspector {
         }
     }
 
-    /// Checks the code signature of the main executable (not every resource, which can take
-    /// minutes for large apps) and names the signer.
-    static func signature(_ url: URL) -> Detail {
+    /// Checks the code signature (for apps, of the main executable rather than every resource,
+    /// which can take minutes for large apps) and names the signer. Also works for disk images.
+    static func signature(_ url: URL, unsignedIsWarning: Bool = true) -> Detail {
         var code: SecStaticCode?
         guard SecStaticCodeCreateWithPath(url as CFURL, [], &code) == errSecSuccess, let code else {
             return Detail(text: "Signature unknown")
         }
         let flags = SecCSFlags(rawValue: kSecCSDoNotValidateResources)
         let status = SecStaticCodeCheckValidity(code, flags, nil)
-        if status == errSecCSUnsigned { return Detail(text: "Not signed", warning: true) }
+        if status == errSecCSUnsigned { return Detail(text: "Not signed", warning: unsignedIsWarning) }
         guard status == errSecSuccess else { return Detail(text: "Signature is not valid", warning: true) }
 
         var infoRef: CFDictionary?

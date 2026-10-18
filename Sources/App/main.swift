@@ -62,7 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     done: Self.isInApplications),
             stepRow(2, "Turn on the extension", "System Settings → Quick Look → Peeky Folders.",
                     done: enabled, button: enabled ? nil : settings),
-            stepRow(3, "Select a folder in Finder", "Or a zip, tar, 7z, rar or other archive."),
+            stepRow(3, "Select a folder in Finder", "Or an archive, disk image, installer or app."),
             stepRow(4, "Press Space", "See what's inside. Press Space again to close."),
         ])
         steps.orientation = .vertical
@@ -290,6 +290,10 @@ func runSnapshot(_ args: [String]) -> Never {
 }
 
 let app = NSApplication.shared
+// Snapshots are for docs: always render them in the light appearance.
+if CommandLine.arguments.contains("--snapshot") || CommandLine.arguments.contains("--welcome-snapshot") {
+    app.appearance = NSAppearance(named: .aqua)
+}
 if let i = CommandLine.arguments.firstIndex(of: "--welcome-snapshot") {
     // Developer aid: `PeekyFolders --welcome-snapshot <out.png>` renders the welcome screen.
     app.setActivationPolicy(.prohibited)

@@ -17,7 +17,7 @@ enum ArchiveError: LocalizedError {
 
 /// Lists archive contents with libarchive: zip/jar, tar, gz/tgz, bz2, xz, 7z, rar, cpio, iso, …
 enum ArchiveReader {
-    struct Item { var path: String; var isDir: Bool; var size: Int64?; var mtime: Date? }
+    struct Item { var path: String; var isDir: Bool; var size: Int64?; var mtime: Date?; var isLink = false }
 
     static func list(url: URL, showHidden: Bool) throws -> Entry {
         let items: [Item]
@@ -61,7 +61,8 @@ enum ArchiveReader {
                 break                                    // show what we got so far
             }
             guard let e = entry else { break }
-            let isDir = (archive_entry_filetype(e) & 0o170000) == 0o040000
+            let fileType = archive_entry_filetype(e) & 0o170000
+            let isDir = fileType == 0o040000
             var size: Int64? = archive_entry_size_is_set(e) != 0 ? archive_entry_size(e) : nil
             if raw {
                 // Raw streams don't record their size; decompress once to count it.
@@ -78,7 +79,8 @@ enum ArchiveReader {
                 path: decodeName(e),
                 isDir: isDir,
                 size: size,
-                mtime: archive_entry_mtime_is_set(e) != 0 ? Date(timeIntervalSince1970: TimeInterval(archive_entry_mtime(e))) : nil
+                mtime: archive_entry_mtime_is_set(e) != 0 ? Date(timeIntervalSince1970: TimeInterval(archive_entry_mtime(e))) : nil,
+                isLink: fileType == 0o120000
             ))
             if !raw { archive_read_data_skip(a) }
         }
@@ -199,6 +201,11 @@ enum ArchiveReader {
             }
             if item.isDir {
                 dir(p).modified = item.mtime
+            } else if item.isLink {
+                let parent = dir((p as NSString).deletingLastPathComponent)
+                parent.children!.append(Entry(
+                    name: (p as NSString).lastPathComponent, fileURL: nil, archivePath: p, isDirectory: false,
+                    isPackage: false, kind: "Alias", utType: .symbolicLink, size: nil, modified: item.mtime, created: nil))
             } else {
                 let parent = dir((p as NSString).deletingLastPathComponent)
                 let name = (p as NSString).lastPathComponent
@@ -217,9 +224,17 @@ enum ArchiveReader {
         s.prefix(1).uppercased() + s.dropFirst()
     }
 
+    /// Folders inside archives and images. Bundles such as "Foo.app" keep their own kind and
+    /// icon ("Application") but stay browsable.
     private static func makeDir(name: String, path: String) -> Entry {
-        Entry(name: name, fileURL: nil, archivePath: path, isDirectory: true, isPackage: false,
-              kind: "Folder", utType: .folder, size: nil, modified: nil, created: nil)
+        let ext = (name as NSString).pathExtension
+        if !ext.isEmpty, let type = UTType(filenameExtension: ext, conformingTo: .directory), type.conforms(to: .package) {
+            return Entry(name: name, fileURL: nil, archivePath: path, isDirectory: true, isPackage: false,
+                         kind: type.localizedDescription.map(capitalizedFirst) ?? "Folder", utType: type,
+                         size: nil, modified: nil, created: nil)
+        }
+        return Entry(name: name, fileURL: nil, archivePath: path, isDirectory: true, isPackage: false,
+                     kind: "Folder", utType: .folder, size: nil, modified: nil, created: nil)
     }
 
     @discardableResult

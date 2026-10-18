@@ -20,6 +20,9 @@ final class Settings {
             "sortAscending": true,
             "previewSizeIndex": 1,
             "archiveLimitMB": 1024,        // 0 = no limit
+            "previewApps": true,           // Quick Look: use Peeky Folders for these types,
+            "previewPackages": true,       // or fall back to the system preview
+            "previewDiskImages": true,
         ])
     }
 
@@ -33,6 +36,18 @@ final class Settings {
     var sortKey: String { get { d.string(forKey: "sortKey") ?? "name" } set { d.set(newValue, forKey: "sortKey") } }
     var sortAscending: Bool { get { d.bool(forKey: "sortAscending") } set { d.set(newValue, forKey: "sortAscending") } }
     var previewSizeIndex: Int { get { d.integer(forKey: "previewSizeIndex") } set { d.set(newValue, forKey: "previewSizeIndex") } }
+    var previewApps: Bool { get { d.bool(forKey: "previewApps") } set { d.set(newValue, forKey: "previewApps") } }
+    var previewPackages: Bool { get { d.bool(forKey: "previewPackages") } set { d.set(newValue, forKey: "previewPackages") } }
+    var previewDiskImages: Bool { get { d.bool(forKey: "previewDiskImages") } set { d.set(newValue, forKey: "previewDiskImages") } }
+
+    /// Whether Quick Look should show this file with Peeky Folders (folders and archives always are).
+    func handlesInQuickLook(_ url: URL) -> Bool {
+        if DiskImageReader.isDiskImage(url) { return previewDiskImages }
+        if PackageReader.isPackage(url) { return previewPackages }
+        if (try? url.resourceValues(forKeys: [.isPackageKey]))?.isPackage == true { return previewApps }
+        return true
+    }
+
     var archiveLimitMB: Int { get { d.integer(forKey: "archiveLimitMB") } set { d.set(newValue, forKey: "archiveLimitMB") } }
 
     var hiddenColumns: Set<String> {

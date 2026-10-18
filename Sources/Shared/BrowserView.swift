@@ -17,6 +17,9 @@ final class BrowserView: NSView {
         Column(id: "items", title: "Items", width: 60, minWidth: 40, rightAligned: true),
     ]
 
+    /// True inside the Quick Look extension (shows the "Use Peeky Folders For" menu).
+    var isQuickLook = false { didSet { rebuildGearMenu() } }
+
     /// Called when the user picks a different preview window size.
     var onPreferredSizeChange: ((NSSize) -> Void)?
 
@@ -92,7 +95,11 @@ final class BrowserView: NSView {
             let result = Result<(Entry, Bool, Int64?, [Detail]), Error> {
                 let rv = try url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey, .fileSizeKey])
                 let fileSize = rv.fileSize.map(Int64.init)
-                // Installer packages: the file list comes from their manifests, so size limits don't apply.
+                // Disk images and installer packages: only their file lists are read, so size limits don't apply.
+                if DiskImageReader.isDiskImage(url), rv.isDirectory != true {
+                    let (root, details) = try DiskImageReader.read(url, showHidden: showHidden)
+                    return (root, true, fileSize, details)
+                }
                 if PackageReader.isPackage(url) {
                     let (root, details) = try PackageReader.read(url, showHidden: showHidden)
                     return (root, true, rv.isDirectory == true ? nil : fileSize, details)
@@ -629,6 +636,15 @@ final class BrowserView: NSView {
         }
         addChoice(m, "Preview Window Size", [("Small", 0), ("Medium", 1), ("Large", 2)], current: s.previewSizeIndex) { [weak self] v in
             s.previewSizeIndex = v; self?.onPreferredSizeChange?(s.previewSize)
+        }
+        if isQuickLook {
+            let sub = NSMenu()
+            add(sub, "Apps", on: s.previewApps) { [weak self] in s.previewApps.toggle(); self?.rebuildGearMenu() }
+            add(sub, "Installer Packages", on: s.previewPackages) { [weak self] in s.previewPackages.toggle(); self?.rebuildGearMenu() }
+            add(sub, "Disk Images", on: s.previewDiskImages) { [weak self] in s.previewDiskImages.toggle(); self?.rebuildGearMenu() }
+            let host = NSMenuItem(title: "Use Peeky Folders For", action: nil, keyEquivalent: "")
+            host.submenu = sub
+            m.addItem(host)
         }
         addChoice(m, "Archive Size Limit", [("100 MB", 100), ("500 MB", 500), ("1 GB", 1024), ("4 GB", 4096), ("No Limit", 0)], current: s.archiveLimitMB) { v in
             s.archiveLimitMB = v
