@@ -1,0 +1,79 @@
+{
+  "fill": {
+    "automatic-gradient": "srgb:0.11765,0.50196,0.96078,1.00000"
+  },
+  "groups": [
+    {
+      "name": "Heart",
+      "layers": [
+        {
+          "image-name": "heart.svg",
+          "name": "heart",
+          "opacity": 1.0,
+          "glass": true,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.15
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.0
+      },
+      "specular": true
+    },
+    {
+      "name": "Folder",
+      "layers": [
+        {
+          "image-name": "lines.svg",
+          "name": "lines",
+          "opacity": 1.0,
+          "glass": false,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name": "folder.svg",
+          "name": "folder",
+          "opacity": 1.0,
+          "glass": true,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.45
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.0
+      },
+      "specular": true
+    }
+  ],
+  "supported-platforms": {
+    "squares": [
+      "macOS"
+    ]
+  }
+}
